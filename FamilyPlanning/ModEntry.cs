@@ -9,13 +9,19 @@ using StardewValley.Characters;
 
 namespace FamilyPlanning
 {
-    /* Family Planning: allow players to customize the number of children they have.
+    /* Family Planning: allow players to customize the number of children they have, their genders,
+     *                  and allows them to adopt children with Krobus.
      * -> The player enters the number of children they want, for now it's a console command.
      *   -> If 0, they never get the question.
      *   -> If 1, they stop after 1.
      *   -> The default is 2, vanilla behavior. (if they don't already have more than 2 kids)
      *   -> If more than 2, then they get the event even after 2 children.
-     * -> Also, this mods allows the player to customize the gender of the child at birth.
+     *   
+     * -> The player is given the option to customize the gender of the child at birth.
+     * 
+     * -> There's a config option, AdoptChildrenWithKrobus.
+     * -> If you set this value to true, then Krobus will prompt you to adopt a child.
+     * -> (You could potentially stop this by setting TotalChildren to 0, technically.)
      * 
      * This version of Family Planning is compatible with SMAPI 3.0 and Stardew Valley 1.4.
      */
@@ -24,6 +30,7 @@ namespace FamilyPlanning
      *  -> StardewValley.NPC.canGetPregnant() -> determines the number of children you can have
      *  -> StardewValley.Characters.Child.reloadSprite() -> determines the sprite for a child
      *  -> StardewValley.Characters.Child.tenMinuteUpdate() -> tells the child where their bed is
+     *  -> StardewValley.NPC.isGaySpouse() -> makes sure that Krobus is counted as an adoptive parent
      */
 
     /* Content Packs:
@@ -50,6 +57,8 @@ namespace FamilyPlanning
         private static List<IContentPack> contentPacks;
         public static IMonitor monitor;
         public static IModHelper helper;
+        private ModConfig config;
+        private static bool AdoptChildrenWithKrobus;
         private bool firstTick = true;
 
         public override void Entry(IModHelper helper)
@@ -57,6 +66,9 @@ namespace FamilyPlanning
             //create variables
             monitor = Monitor;
             ModEntry.helper = helper;
+            //Load Config
+            config = helper.ReadConfig<ModConfig>();
+            AdoptChildrenWithKrobus = config.AdoptChildrenWithKrobus;
             //Console commands
             helper.ConsoleCommands.Add("get_max_children", "Returns the number of children you can have.", GetTotalChildrenConsole);
             helper.ConsoleCommands.Add("set_max_children", "Sets the value for how many children you can have. (If you set the value to more than 4, children will overlap in bed and Content Patcher mods may not work.)\nUsage: set_max_children <value>\n- value: the number of children you can have.", SetTotalChildrenConsole);
@@ -80,9 +92,11 @@ namespace FamilyPlanning
                original: AccessTools.Method(typeof(Child), nameof(Child.tenMinuteUpdate)),
                postfix: new HarmonyMethod(typeof(Patches.ChildTenMinuteUpdatePatch), nameof(Patches.ChildTenMinuteUpdatePatch.Postfix))
             );
-
-            //harmony.PatchAll(Assembly.GetExecutingAssembly());
-
+            harmony.Patch(
+                original: AccessTools.Method(typeof(NPC), nameof(NPC.isGaySpouse)),
+                postfix: new HarmonyMethod(typeof(Patches.IsGaySpousePatch), nameof(Patches.IsGaySpousePatch.Postfix))
+            );
+            
             //Load content packs
             contentPacks = new List<IContentPack>();
             foreach (IContentPack contentPack in helper.ContentPacks.GetOwned())
@@ -262,6 +276,11 @@ namespace FamilyPlanning
         public static FamilyData GetFamilyData()
         {
             return data;
+        }
+
+        public static bool KrobusConfig()
+        {
+            return AdoptChildrenWithKrobus;
         }
 
         public static Tuple<string, string> GetChildSpriteData(string childName)
