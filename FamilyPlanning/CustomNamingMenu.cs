@@ -45,8 +45,8 @@ namespace FamilyPlanning
             textBox.Y = Game1.viewport.Height / 2;
             textBox.Width = 256;
             textBox.Height = 192;
-            e = new TextBoxEvent(this.textBoxEnter);
-            textBox.OnEnterPressed += this.e;
+            e = new TextBoxEvent(textBoxEnter);
+            textBox.OnEnterPressed += e;
             Game1.keyboardDispatcher.Subscriber = textBox;
             textBox.Text = defaultName != null ? defaultName : Dialogue.randomName();
             textBox.Selected = true;
@@ -141,9 +141,9 @@ namespace FamilyPlanning
             if (doneNamingButton != null)
             {
                 if (doneNamingButton.containsPoint(x, y))
-                    doneNamingButton.scale = Math.Min(1.1f, this.doneNamingButton.scale + 0.05f);
+                    doneNamingButton.scale = Math.Min(1.1f, doneNamingButton.scale + 0.05f);
                 else
-                    doneNamingButton.scale = Math.Max(1f, this.doneNamingButton.scale - 0.05f);
+                    doneNamingButton.scale = Math.Max(1f, doneNamingButton.scale - 0.05f);
             }
             if(maleButton != null)
             {
@@ -198,7 +198,7 @@ namespace FamilyPlanning
         {
             base.draw(b);
             b.Draw(Game1.fadeToBlackRect, Game1.graphics.GraphicsDevice.Viewport.Bounds, Color.Black * 0.75f);
-            //I've added this to change the gender of the title text depending on which gender child you have selected.
+            // I've added this to change the gender of the title text depending on which gender child you have selected.
             if(gender.Equals("Male"))
                 SpriteText.drawStringWithScrollCenteredAt(b, titleMale, Game1.viewport.Width / 2, Game1.viewport.Height / 2 - 128, titleMale, 1f, -1, 0, 0.88f, false);
             else

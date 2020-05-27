@@ -11,7 +11,7 @@ using StardewValley.Characters;
  * -> Check if multiplayer works
  * -> Implement multiplayer birthing event/naming menu stuff
  */
- 
+
 namespace FamilyPlanning
 {
     /* Family Planning: allows players to customize the number of children they have and their genders,
@@ -40,8 +40,6 @@ namespace FamilyPlanning
      * -> There's another config option, BabyQuestionMessages, which defaults to false.
      * -> When true, you will get messages in the SMAPI console that give you information
      *    about whether your spouse is able to ask you for a child, and their chance of doing so.
-     * 
-     * This version of Family Planning is compatible with SMAPI 3.0 and Stardew Valley 1.4.
      */
 
     /* Harmony patches:
@@ -56,46 +54,69 @@ namespace FamilyPlanning
      * Instructions for how to make a Content Pack are in the README.md on GitHub 
      */
 
-    /* Content Patcher:
-     * I try to load the sprite from the value "Characters\\Child_<Child Name>".
-     * CP Mods can get access to the child name through the custom CP tokens, then patch that value.
-     * There is also a token, IsToddler, which returns:
-     * -> "true" when the child is toddler age (3), and
-     * -> "false" when the child is younger (0 to 2).
-     * (I'm considering adding a gender token, but haven't gotten confirmation that it's necessary.)
-     */
-
     class ModEntry : Mod
     {
-        private static FamilyData data;
+        /* The list of the content packs for this mod */
         private static List<IContentPack> contentPacks;
-        public static IMonitor monitor;
-        public static IModHelper helper;
+
+        /* An individual save file's settings for this mod */
+        private static FamilyData data;
+
+        /* The global configuration for this mod */
         private ModConfig config;
+        /* The configured values */
         private static bool AdoptChildrenWithRoommate;
         private static bool BabyQuestionMessages;
+
+        /* SMAPI objects */
+        public static IMonitor monitor;
+        public static IModHelper helper;
+        
+        /* Used to reload the child sprites */
         private bool firstTick = true;
 
+        /* Used to create the CP custom child tokens */
+        private readonly int MaxTokens = 4;
+        private readonly string[] nameTokens = { "FirstChildName", "SecondChildName", "ThirdChildName", "FourthChildName" };
+        private readonly string[] ageTokens = { "FirstChildIsToddler", "SecondChildIsToddler", "ThirdChildIsToddler", "FourthChildIsToddler" };
+
+        /* entry - the entry method for a SMAPI mod 
+         *
+         * Loads the config and adds console commands/event handlers for SMAPI,
+         * patches the original Stardew Valley methods using Harmony.
+         */
         public override void Entry(IModHelper helper)
         {
-            //create variables
+            // Set the global variables
             monitor = Monitor;
             ModEntry.helper = helper;
-            //Load Config
+
+            //Load the config info from file
             config = helper.ReadConfig<ModConfig>();
             AdoptChildrenWithRoommate = config.AdoptChildrenWithRoommate;
             BabyQuestionMessages = config.BabyQuestionMessages;
-            //Console commands
+
+            // Add the console commands
             helper.ConsoleCommands.Add("get_max_children", "Returns the number of children you can have.", GetTotalChildrenConsole);
             helper.ConsoleCommands.Add("set_max_children", "Sets the value for how many children you can have. (If you set the value to more than 4, children will overlap in bed and Content Patcher mods may not work.)\nUsage: set_max_children <value>\n- value: the number of children you can have.", SetTotalChildrenConsole);
             helper.ConsoleCommands.Add("get_question_chance", "Returns the percentage chance that your spouse will ask to have a child.", GetBabyQuestionChance);
             helper.ConsoleCommands.Add("set_question_chance", "Sets the probability that your spouse will ask to have a child. The default chance is 5%.\nUsage: set_question_chance <value>\n- value: the percentage chance that your spouse will ask you for a baby (when it's possible for them to do so). Enter this as a whole number between 1 and 100, representing the percentage chance.\nExamples: set_question_chance 100 => 100% chance.\n          set_question_chance 5 => 5% chance.", SetBabyQuestionChance);
-            //Event handlers
+            
+            // Add the event handlers
             helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
             helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
             helper.Events.GameLoop.GameLaunched += OnGameLaunched;
             helper.Events.GameLoop.OneSecondUpdateTicked += OnOneSecondUpdateTicked;
-            //Harmony
+            
+            // Load content packs
+            contentPacks = new List<IContentPack>();
+            foreach (IContentPack contentPack in helper.ContentPacks.GetOwned())
+            {
+                Monitor.Log($"Reading content pack: {contentPack.Manifest.Name} {contentPack.Manifest.Version} from {contentPack.DirectoryPath}");
+                contentPacks.Add(contentPack);
+            }
+
+            // Use Harmony to patch the original methods
             HarmonyInstance harmony = HarmonyInstance.Create("Loe2run.FamilyPlanning");
             
             harmony.Patch(
@@ -118,38 +139,36 @@ namespace FamilyPlanning
                 original: AccessTools.Method(typeof(Utility), nameof(Utility.pickPersonalFarmEvent)),
                 prefix: new HarmonyMethod(typeof(Patches.PickPersonalFarmEventPatch), nameof(Patches.PickPersonalFarmEventPatch.Prefix))
             );
-
-            //Load content packs
-            contentPacks = new List<IContentPack>();
-            foreach (IContentPack contentPack in helper.ContentPacks.GetOwned())
-            {
-                Monitor.Log($"Reading content pack: {contentPack.Manifest.Name} {contentPack.Manifest.Version} from {contentPack.DirectoryPath}");
-                contentPacks.Add(contentPack);
-            }
         }
 
+        /* OnSaveLoaded - loads mod data from file when save is loaded
+         * 
+         * Loads the configuration data for an individual save file
+         * from the "data/{SaveFolderName}.json" file in the mod folder.
+         * If the .json isn't there, creates a new file.
+         */
         private void OnSaveLoaded(object sender, SaveLoadedEventArgs e)
         {
-            if (!Context.IsWorldReady)
-                return;
+            data = null;
 
             try
             {
                 data = Helper.Data.ReadJsonFile<FamilyData>("data/" + Constants.SaveFolderName + ".json");
+            } 
+            catch (Exception) { }
 
-                if(data == null)
-                {
-                    data = new FamilyData();
-                    Helper.Data.WriteJsonFile("data/" + Constants.SaveFolderName + ".json", data);
-                }
-            }
-            catch (Exception)
+            if (data == null)
             {
                 data = new FamilyData();
                 Helper.Data.WriteJsonFile("data/" + Constants.SaveFolderName + ".json", data);
             }
         }
 
+        /* OnUpdateTicked - look for and replace the default BirthingEvent
+         * 
+         * Checks if an event is occuring, and if it's the BirthingEvent,
+         * replaces it with my CustomBirthingEvent.
+         */
         private void OnUpdateTicked(object sender, UpdateTickedEventArgs e)
         {
             if (Game1.farmEvent != null && Game1.farmEvent is BirthingEvent)
@@ -159,9 +178,14 @@ namespace FamilyPlanning
             }
         }
 
+        /* OnOneSecondUpdateTicked - initialize the custom child sprites
+         * 
+         * Triggers the child sprites to reload when the world is first loaded
+         * to update the sprites from the game's default to the custom sprites.
+         */ 
         private void OnOneSecondUpdateTicked(object sender, OneSecondUpdateTickedEventArgs e)
         {
-            if (firstTick)
+            if (firstTick && Context.IsWorldReady)
             {
                 try
                 {
@@ -175,93 +199,31 @@ namespace FamilyPlanning
             }
         }
 
+        /* OnGameLaunched - register the custom content patcher tokens
+         * 
+         * Uses the Content Patcher API to register new tokens for this mod.
+         * These tokens are used to represent the child's name and age for use in CP packs.
+         */
         private void OnGameLaunched(object sender, GameLaunchedEventArgs e)
         {
+            // Try to load the api
             IContentPatcherAPI api = Helper.ModRegistry.GetApi<IContentPatcherAPI>("Pathoschild.ContentPatcher");
             if (api == null)
                 return;
 
-            ChildToken token = new ChildToken(1);
-            api.RegisterToken(
-                mod: ModManifest,
-                name: "FirstChildName",
-                updateContext: token.NameUpdateContext,
-                isReady: token.IsReady,
-                getValue: token.NameGetValue,
-                allowsInput: false,
-                requiresInput: false
-            );
-            api.RegisterToken(
-                mod: ModManifest,
-                name: "FirstChildIsToddler",
-                updateContext: token.AgeUpdateContext,
-                isReady: token.IsReady,
-                getValue: token.AgeGetValue,
-                allowsInput: false,
-                requiresInput: false
-            );
-
-            token = new ChildToken(2);
-            api.RegisterToken(
-                mod: ModManifest,
-                name: "SecondChildName",
-                updateContext: token.NameUpdateContext,
-                isReady: token.IsReady,
-                getValue: token.NameGetValue,
-                allowsInput: false,
-                requiresInput: false
-            );
-            api.RegisterToken(
-                mod: ModManifest,
-                name: "SecondChildIsToddler",
-                updateContext: token.AgeUpdateContext,
-                isReady: token.IsReady,
-                getValue: token.AgeGetValue,
-                allowsInput: false,
-                requiresInput: false
-            );
-
-            token = new ChildToken(3);
-            api.RegisterToken(
-                mod: ModManifest,
-                name: "ThirdChildName",
-                updateContext: token.NameUpdateContext,
-                isReady: token.IsReady,
-                getValue: token.NameGetValue,
-                allowsInput: false,
-                requiresInput: false
-            );
-            api.RegisterToken(
-                mod: ModManifest,
-                name: "ThirdChildIsToddler",
-                updateContext: token.AgeUpdateContext,
-                isReady: token.IsReady,
-                getValue: token.AgeGetValue,
-                allowsInput: false,
-                requiresInput: false
-            );
-
-            token = new ChildToken(4);
-            api.RegisterToken(
-                mod: ModManifest,
-                name: "FourthChildName",
-                updateContext: token.NameUpdateContext,
-                isReady: token.IsReady,
-                getValue: token.NameGetValue,
-                allowsInput: false,
-                requiresInput: false
-            );
-            api.RegisterToken(
-                mod: ModManifest,
-                name: "FourthChildIsToddler",
-                updateContext: token.AgeUpdateContext,
-                isReady: token.IsReady,
-                getValue: token.AgeGetValue,
-                allowsInput: false,
-                requiresInput: false
-            );
+            // Register Content Patcher custom tokens for children
+            ChildToken token;
+            for (int i = 0; i < MaxTokens; i++)
+            {
+                token = new ChildToken(i + 1);
+                api.RegisterToken(ModManifest, nameTokens[i], token.GetChildName);
+                api.RegisterToken(ModManifest, ageTokens[i], token.GetChildIsToddler);
+            }
         }
 
+        /*
+         * Methods to run for the console commands
+         */
         public void GetTotalChildrenConsole(string command, string[] args)
         {
             if (!Context.IsWorldReady)
@@ -335,6 +297,9 @@ namespace FamilyPlanning
             }
         }
 
+        /*
+         * Methods for getting private variables 
+         */
         public static FamilyData GetFamilyData()
         {
             return data;
@@ -350,57 +315,54 @@ namespace FamilyPlanning
             return BabyQuestionMessages;
         }
 
-        public static Tuple<string, string> GetChildSpriteData(string childName)
+        /* GetChildSpriteData - finds the content pack child sprite asset key
+         * 
+         * Looks through the content packs and tries to find a patch for this child's sprite,
+         * then loads the asset key for use in the game.
+         */ 
+        public static string GetChildSpriteData(string childName, int childAge)
         {
             foreach (IContentPack contentPack in contentPacks)
             {
                 try
                 {
                     ContentPackData cpdata = contentPack.ReadJsonFile<ContentPackData>("assets/data.json");
-                    if (cpdata.ChildSpriteID == null)
-                        return null;
-                    foreach (string key in cpdata.ChildSpriteID.Keys)
+                    if (cpdata.ChildSpriteID.TryGetValue(childName, out ContentPackData.SpriteNames spriteNames))
                     {
-                        if (key.Equals(childName))
-                        {
-                            cpdata.ChildSpriteID.TryGetValue(key, out Tuple<string, string> pair);
-                            string assetName1 = contentPack.GetActualAssetKey("assets/" + pair.Item1);
-                            string assetName2 = contentPack.GetActualAssetKey("assets/" + pair.Item2);
-                            return new Tuple<string, string>(assetName1, assetName2);
-                        }
+                        if (childAge >= 3)
+                            return contentPack.GetActualAssetKey(spriteNames.ToddlerSpriteName);
+                        else
+                            return contentPack.GetActualAssetKey(spriteNames.BabySpriteName);
                     }
                 }
                 catch (Exception e)
                 {
-                    monitor.Log("An exception occurred in Loe2run.FamilyPlanning while loading the child sprite.");
-                    monitor.Log(e.Message);
+                    monitor.Log("An exception occurred in Loe2run.FamilyPlanning while loading child sprites.", LogLevel.Debug);
+                    monitor.Log(e.Message, LogLevel.Debug);
                 }
             }
             return null;
         }
 
-        public static List<Tuple<int, string>> GetSpouseDialogueData(string spouseName)
+        /* GetSpouseDialogueData - finds the content pack spouse dialogue
+         * 
+         * Looks through the content packs and tries to find a patch for this spouse's dialogue,
+         * then loads that dialogue for use in the game.
+         */
+        public static List<ContentPackData.BirthDialogue> GetSpouseDialogueData(string spouseName)
         {
             foreach (IContentPack contentPack in contentPacks)
             {
                 try
                 {
                     ContentPackData cpdata = contentPack.ReadJsonFile<ContentPackData>("assets/data.json");
-                    if (cpdata.SpouseDialogue == null)
-                        return null;
-                    foreach (string key in cpdata.SpouseDialogue.Keys)
-                    {
-                        if (key.Equals(spouseName))
-                        {
-                            cpdata.SpouseDialogue.TryGetValue(key, out List<Tuple<int, string>> spouseDialogue);
-                            return spouseDialogue;
-                        }
-                    }
+                    if (cpdata.SpouseDialogue.TryGetValue(spouseName, out List<ContentPackData.BirthDialogue> spouseDialogue))
+                        return spouseDialogue;
                 }
                 catch (Exception e)
                 {
-                    monitor.Log("An exception occurred in Loe2run.FamilyPlanning while loading spouse dialogue.");
-                    monitor.Log(e.Message);
+                    monitor.Log("An exception occurred in Loe2run.FamilyPlanning while loading spouse dialogue.", LogLevel.Debug);
+                    monitor.Log(e.Message, LogLevel.Debug);
                 }
             }
             return null;
