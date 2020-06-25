@@ -23,39 +23,69 @@ namespace FamilyPlanning
     internal class ChildToken
     {
         private readonly int ChildNumber;
+        private bool Initialized;
+        private string ChildName;
+        private string ChildIsToddler;
 
         public ChildToken(int childNumberIn)
         {
             ChildNumber = childNumberIn;
+            ChildName = null;
+            ChildIsToddler = null;
+            Initialized = false;
+        }
+
+        public void InitializeToken()
+        {
+            if (Context.IsWorldReady)
+            {
+                List<Child> children = Game1.player.getChildren();
+                if (children != null && children.Count >= ChildNumber)
+                {
+                    Child child = children[ChildNumber - 1];
+                    ChildName = child.Name;
+                    ChildIsToddler = (child.Age >= 3) ? "true" : "false";
+                    Initialized = true;
+                }
+            }
+        }
+
+        public void UpdateToken()
+        {
+            if (Context.IsWorldReady)
+            {
+                List<Child> children = Game1.player.getChildren();
+                if (children != null && children.Count >= ChildNumber)
+                {
+                    Child child = children[ChildNumber - 1];
+                    ChildIsToddler = (child.Age >= 3) ? "true" : "false";
+                }
+            }
+        }
+
+        public void ClearToken()
+        {
+            ChildName = null;
+            ChildIsToddler = null;
+            Initialized = false;
+        }
+
+        public bool IsInitialized()
+        {
+            return Initialized;
         }
 
         public IEnumerable<string> GetChildName()
         {
-            if (Context.IsWorldReady)
-            {
-                try
-                {
-                    List<Child> children = Game1.player.getChildren();
-                    if (children != null && children.Count >= ChildNumber)
-                        return new[] { children[ChildNumber - 1].Name };
-                }
-                catch (Exception) { }
-            }
+            if (ChildName != null)
+                return new[] { ChildName };
             return null;
         }
 
         public IEnumerable<string> GetChildIsToddler()
         {
-            if (Context.IsWorldReady)
-            {
-                try
-                {
-                    List<Child> children = Game1.player.getChildren();
-                    if (children != null && children.Count >= ChildNumber)
-                        return new[] { (children[ChildNumber - 1].Age == 3) ? "true" : "false" };
-                }
-                catch (Exception) { }
-            }
+            if(ChildIsToddler != null)
+                return new[] { ChildIsToddler };
             return null;
         }
     }

@@ -2,11 +2,15 @@
 
 namespace FamilyPlanning.Patches
 {
-    /* IsGaySpouse triggers in a few places to determine parenting dialogue.
-     * Roommates will always adopt children, so I'm patching them as a gay spouse for the sake of adoption dialogue.
-     * (By triggering this based on roommate status, and not by being Krobus, this should future-proof this mod.)
+    /* NPC.isGaySpouse():
+     * This patch causes a roommate spouse to be recognized as a gay spouse.
+     * IsGaySpouse triggers in a few places to determine parenting dialogue, and roommates will always adopt children,
+     * so patching them as a gay spouse gives them adoption dialogue instead.
+     * 
+     * While the only vanilla roommate option is Krobus, this patch is based on roommate status instead of name,
+     * so any additional roommate options should also be covered by this patch.
      */
-     
+    
     class IsGaySpousePatch
     {
         public static void Postfix(NPC __instance, ref bool __result)

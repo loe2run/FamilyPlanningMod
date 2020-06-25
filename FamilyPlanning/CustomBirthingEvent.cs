@@ -18,19 +18,19 @@ namespace FamilyPlanning
 
     class CustomBirthingEvent : FarmEvent, INetObject<NetFields>
     {
-        private int behavior;
+        // private int behavior;
         private int timer;
-        private string soundName;
+        // private string soundName;
         private string message;
         private string babyName;
-        private bool playedSound;
-        private bool showedMessage;
+        // private bool playedSound;
+        // private bool showedMessage;
         private bool isMale;
         private bool getBabyName;
         private bool naming;
-        private Vector2 targetLocation;
-        private TextBox babyNameBox;
-        private ClickableTextureComponent okButton;
+        // private Vector2 targetLocation;
+        // private TextBox babyNameBox;
+        // private ClickableTextureComponent okButton;
         public NetFields NetFields { get; } = new NetFields();
 
         public bool setUp()
@@ -79,14 +79,16 @@ namespace FamilyPlanning
             timer += time.ElapsedGameTime.Milliseconds;
             Game1.fadeToBlackAlpha = 1f;
 
-            if (timer > 1500 && !playedSound && !getBabyName)
+            if (timer > 1500 /* && !playedSound */ && !getBabyName)
             {
+                /*
                 if (soundName != null && !soundName.Equals(""))
                 {
                     Game1.playSound(soundName);
                     playedSound = true;
                 }
-                if (!playedSound && message != null && (!Game1.dialogueUp && Game1.activeClickableMenu == null))
+                */
+                if (/* !playedSound && */ message != null && (!Game1.dialogueUp && Game1.activeClickableMenu == null))
                 {
                     Game1.drawObjectDialogue(message);
                     Game1.afterDialogues = new Game1.afterFadeFunction(afterMessage);

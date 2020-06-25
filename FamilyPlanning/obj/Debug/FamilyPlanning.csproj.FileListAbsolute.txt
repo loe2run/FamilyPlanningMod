@@ -8,8 +8,7 @@ C:\Users\PC\source\repos\FamilyPlanning\FamilyPlanning\obj\Debug\FamilyPlanning.
 C:\Users\PC\source\repos\FamilyPlanning\FamilyPlanning\obj\Debug\FamilyPlanning.csprojAssemblyReference.cache
 C:\Users\haley\Source\Repos\FamilyPlanningMod\FamilyPlanning\bin\Debug\FamilyPlanning.dll
 C:\Users\haley\Source\Repos\FamilyPlanningMod\FamilyPlanning\bin\Debug\FamilyPlanning.pdb
-C:\Users\haley\Source\Repos\FamilyPlanningMod\FamilyPlanning\bin\Debug\0Harmony.dll
-C:\Users\haley\Source\Repos\FamilyPlanningMod\FamilyPlanning\obj\Debug\FamilyPlanning.csprojAssemblyReference.cache
-C:\Users\haley\Source\Repos\FamilyPlanningMod\FamilyPlanning\obj\Debug\FamilyPlanning.csproj.CopyComplete
 C:\Users\haley\Source\Repos\FamilyPlanningMod\FamilyPlanning\obj\Debug\FamilyPlanning.dll
 C:\Users\haley\Source\Repos\FamilyPlanningMod\FamilyPlanning\obj\Debug\FamilyPlanning.pdb
+C:\Users\haley\source\repos\FamilyPlanningMod\FamilyPlanning\obj\Debug\FamilyPlanning.csproj.CoreCompileInputs.cache
+C:\Users\haley\source\repos\FamilyPlanningMod\FamilyPlanning\obj\Debug\FamilyPlanning.csprojAssemblyReference.cache

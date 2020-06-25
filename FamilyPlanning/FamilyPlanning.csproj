@@ -12,6 +12,7 @@
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
+    <EnableHarmony>true</EnableHarmony>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
   </PropertyGroup>
@@ -52,9 +53,10 @@
     <Compile Include="CustomNamingMenu.cs" />
     <Compile Include="FamilyData.cs" />
     <Compile Include="IContentPatcherAPI.cs" />
+    <Compile Include="ModCommands.cs" />
     <Compile Include="ModConfig.cs" />
     <Compile Include="ModEntry.cs" />
-    <Compile Include="Patches\CanGetPregnantPatch.cs" />
+    <Compile Include="Patches\ChildDayUpdatePatch.cs" />
     <Compile Include="Patches\ChildReloadSpritePatch.cs" />
     <Compile Include="Patches\ChildTenMinuteUpdatePatch.cs" />
     <Compile Include="Patches\IsGaySpousePatch.cs" />
@@ -71,11 +73,11 @@
       <UserProperties manifest_1json__JSONSchema="json" />
     </VisualStudio>
   </ProjectExtensions>
-  <Import Project="..\packages\Pathoschild.Stardew.ModBuildConfig.3.0.0\build\Pathoschild.Stardew.ModBuildConfig.targets" Condition="Exists('..\packages\Pathoschild.Stardew.ModBuildConfig.3.0.0\build\Pathoschild.Stardew.ModBuildConfig.targets')" />
+  <Import Project="..\packages\Pathoschild.Stardew.ModBuildConfig.3.1.0\build\Pathoschild.Stardew.ModBuildConfig.targets" Condition="Exists('..\packages\Pathoschild.Stardew.ModBuildConfig.3.1.0\build\Pathoschild.Stardew.ModBuildConfig.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\packages\Pathoschild.Stardew.ModBuildConfig.3.0.0\build\Pathoschild.Stardew.ModBuildConfig.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Pathoschild.Stardew.ModBuildConfig.3.0.0\build\Pathoschild.Stardew.ModBuildConfig.targets'))" />
+    <Error Condition="!Exists('..\packages\Pathoschild.Stardew.ModBuildConfig.3.1.0\build\Pathoschild.Stardew.ModBuildConfig.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Pathoschild.Stardew.ModBuildConfig.3.1.0\build\Pathoschild.Stardew.ModBuildConfig.targets'))" />
   </Target>
 </Project>

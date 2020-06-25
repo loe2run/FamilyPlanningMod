@@ -4,15 +4,15 @@ namespace FamilyPlanning
 {
     class FamilyData
     {
-        public int TotalChildren { get; set; }
+        public int MaxChildren { get; set; }
         public int BabyQuestionChance { get; set; }
 
         public FamilyData()
         {
             if(Game1.player.getChildrenCount() > 2)
-                TotalChildren = Game1.player.getChildrenCount();
+                MaxChildren = Game1.player.getChildrenCount();
             else
-                TotalChildren = 2;
+                MaxChildren = 2;
 
             BabyQuestionChance = 5;
         }

@@ -1,100 +1,53 @@
-﻿using System.Linq;
-using System.Collections.Generic;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
+using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Characters;
 using StardewValley.Locations;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace FamilyPlanning.Patches
 {
+    /* Child.tenMinuteUpdate():
+     * This patch overrides the call to the getChildBed method, to handle having more than 2 children.
+     * 
+     * For the first two children, this method behaves exactly the same as vanilla.
+     * After two children, child 3 will try to share a bed with a like-gender sibling,
+     * and child 4 will use whatever the last open spot is.
+     * If there are more than 4 children, child 5+ will end up in the same spot as child 4.
+     */
+
     class ChildTenMinuteUpdatePatch
     {
-        public static void Postfix(Child __instance)
+        public static void Postfix(ref Child __instance)
         {
+            // We only want to patch bedtime code
             if (!Game1.IsMasterGame || __instance.Age != 3 || Game1.timeOfDay != 1900)
                 return;
 
-            __instance.IsWalkingInSquare = false;
-            __instance.Halt();
-            FarmHouse currentLocation = __instance.currentLocation as FarmHouse;
-            if (!currentLocation.characters.Contains(__instance))
+            // Child should be at home, but abort if not
+            if (!(__instance.currentLocation is FarmHouse))
+            {
+                ModEntry.monitor.Log("TenMinuteUpdate found child not at home: " + __instance.Name, LogLevel.Trace);
                 return;
-
-            /* 
-             * Stardew Valley would normally use getChildBed(this.gender),
-             * but that always puts children on one Tile by gender and will stack children.
-             * 
-             * Currently, children will choose their bed by order of birth and gender.
-             * Oldest siblings get priority, so the first child always sleeps in the same spot.
-             * Otherwise, younger siblings sort themselves to try and pair like genders.
-             * (The youngest child will always get stuck in the last open spot, though.)
-             * 
-             * If I expand this mod to edit the house, then I will need to revisit this.
-             */
-
-            int i = 1;
-            int birthNumber = 0;
-            int boys = 0;
-            int girls = 0;
-            List<Child> children = Game1.player.getChildren();
-            foreach (Child child in children)
-            {
-                if (child.Gender == 0)
-                    boys++;
-                else
-                    girls++;
-
-                if (child.Equals(__instance))
-                {
-                    birthNumber = i;
-                    break;
-                }
-                i++;
             }
 
-            Point childBed = new Point(23, 5);
-
-            if(birthNumber != 1 && boys + girls <= 2)
+            FarmHouse farmHouse = __instance.currentLocation as FarmHouse;
+            if (!farmHouse.characters.Contains(__instance))
             {
-                childBed = new Point(27, 5);
-            }
-            else if (birthNumber != 1 && boys + girls > 2)
-            {
-                if (children[0].Gender == children[1].Gender)
-                {
-                    if (birthNumber == 2)
-                        childBed = new Point(22, 5);
-                    else if (birthNumber == 3)
-                        childBed = new Point(27, 5);
-                    else if (birthNumber == 4)
-                        childBed = new Point(26, 5);
-                }
-                else
-                {
-                    if (birthNumber == 2)
-                        childBed = new Point(27, 5);
-
-                    if (children[2].Gender == children[3].Gender)
-                    {
-                        if (birthNumber == 3)
-                            childBed = new Point(26, 5);
-                        else
-                            childBed = new Point(22, 5);
-                    }
-                    else
-                    {
-                        if (birthNumber == 3)
-                            childBed = new Point(22, 5);
-                        else
-                            childBed = new Point(26, 5);
-                    }
-                }
-            }
-
-            __instance.controller = new PathFindController(__instance, currentLocation, childBed, -1, new PathFindController.endBehavior(__instance.toddlerReachedDestination));
-            if (__instance.controller.pathToEndPoint != null && currentLocation.isTileOnMap(__instance.controller.pathToEndPoint.Last().X, __instance.controller.pathToEndPoint.Last().Y))
+                ModEntry.monitor.Log("TenMinuteUpdate found home doesn't contain child: " + __instance.Name, LogLevel.Trace);
                 return;
-            __instance.controller = null;
+            }
+
+            // Change where the child is pathfinding to using my custom GetChildBed method
+            Point childBed = ModEntry.GetChildBed(__instance, farmHouse);
+            __instance.controller = new PathFindController(__instance, farmHouse, childBed, -1,
+                                                           new PathFindController.endBehavior(__instance.toddlerReachedDestination));
+
+            // Abort if the controller failed to find a path
+            Stack<Point> path = __instance.controller.pathToEndPoint;
+            if (path == null || !farmHouse.isTileOnMap(path.Last().X, path.Last().Y))
+                __instance.controller = null;
         }
     }
 }
