@@ -7,13 +7,16 @@ using StardewValley;
 using StardewValley.Events;
 using StardewValley.Characters;
 using StardewValley.BellsAndWhistles;
-using StardewValley.Menus;
 
 namespace FamilyPlanning
 {
     /*
      * The vast majority of this code is the same as the original BirthingEvent.
      * That's the cause of all the unused variables, etc.
+     * 
+     * The main difference is that this event loads the CustomNamingMenu, not the normal NamingMenu,
+     * and that it adds new logic for handling dialogue past 2 children,
+     * including the option to load custom dialogue from a Family Planning content pack.
      */
 
     class CustomBirthingEvent : FarmEvent, INetObject<NetFields>

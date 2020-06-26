@@ -1,13 +1,21 @@
 ﻿using System;
 using StardewValley;
 using StardewValley.Menus;
+using StardewValley.BellsAndWhistles;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using StardewValley.BellsAndWhistles;
 
 namespace FamilyPlanning
 {
+    /*
+     * The vast majority of this code is the same as the original NamingMenu.
+     * 
+     * The main difference is the added gender control.
+     * By pressing the male button, you can have a male child,
+     * and by pressing the female button, you can have a female child.
+     */
+
     class CustomNamingMenu : IClickableMenu
     {
         protected int minLength = 1;

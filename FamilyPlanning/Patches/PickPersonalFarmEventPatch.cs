@@ -6,7 +6,6 @@ using StardewValley.Events;
 using StardewValley.Locations;
 using StardewModdingAPI;
 using Netcode;
-using System.Globalization;
 
 namespace FamilyPlanning.Patches
 {
@@ -68,6 +67,10 @@ namespace FamilyPlanning.Patches
                 // Check if farmer meets all invariants for baby question event
                 if (CheckNPCSpouse(npcSpouse, maxChildren, verbose))
                 {
+                    // Give the chance message when possible
+                    if (verbose)
+                        ModEntry.monitor.Log("Your spouse may ask for a child tonight... (" + questionPercent + "% chance)", LogLevel.Info);
+
                     // Generate a random value to determine whether the event happens
                     double randomDouble = random.NextDouble();
                     ModEntry.monitor.Log("Generate random value " + randomDouble.ToString("F2") + " < " + questionPercent, LogLevel.Trace);
@@ -92,6 +95,10 @@ namespace FamilyPlanning.Patches
                 // Check if farmer meets all invariants for baby question event
                 if (CheckPlayerSpouse(otherFarmer, maxChildren, verbose))
                 {
+                    // Give the chance message when possible
+                    if (verbose)
+                        ModEntry.monitor.Log("Your spouse may ask for a child tonight... (" + questionPercent + "% chance)", LogLevel.Info);
+
                     // Generate a random value to determine whether the event happens
                     double randomDouble = random.NextDouble();
                     ModEntry.monitor.Log("Generate random value " + randomDouble + " < " + questionPercent, LogLevel.Trace);
@@ -207,9 +214,6 @@ namespace FamilyPlanning.Patches
                 }
             }
 
-            if (verbose)
-                ModEntry.monitor.Log("Your spouse may ask for a child tonight...", LogLevel.Info);
-
             return true;
         }
 
@@ -287,8 +291,6 @@ namespace FamilyPlanning.Patches
                 }
             }
 
-            if (verbose)
-                ModEntry.monitor.Log("Your spouse may ask for a child tonight...", LogLevel.Info);
             return true;
         }
     }

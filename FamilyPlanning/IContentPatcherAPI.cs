@@ -18,7 +18,14 @@ namespace FamilyPlanning
         void RegisterToken(IManifest mod, string name, Func<IEnumerable<string>> getValue);
     }
 
-    /* ChildToken keeps track of the child's information for Content Patcher tokens.
+    /* The ChildToken class caches a child's information for Content Patcher tokens.
+     * 
+     * Available tokens: ChildName, ChildIsToddler
+     * A copy of these tokens exists for the first four children born.
+     * Example: FirstChildName, SecondChildName, ThirdChildName, FourthChildName.
+     * 
+     * ChildName: returns the child's name.
+     * ChildIsToddler: returns the string "true" if the child is toddler age or older, "false" otherwise.
      */
     internal class ChildToken
     {
@@ -27,6 +34,11 @@ namespace FamilyPlanning
         private string ChildName;
         private string ChildIsToddler;
 
+        /* ChildToken constructor - initializes class variables
+         * 
+         * Tokens are registered with the Content Patcher API before child information is available,
+         * so this initializes class fields to null when created.
+         */ 
         public ChildToken(int childNumberIn)
         {
             ChildNumber = childNumberIn;
@@ -35,6 +47,12 @@ namespace FamilyPlanning
             Initialized = false;
         }
 
+        /* InitializeToken - initializes class fields
+         * 
+         * Loads the ChildName and ChildIsToddler fields from game data.
+         * If the fields are successfully initialized, the bool Initialized is set to true.
+         * If the function fails because information isn't available, the token remains uninitialized.
+         */ 
         public void InitializeToken()
         {
             if (Context.IsWorldReady)
@@ -50,6 +68,11 @@ namespace FamilyPlanning
             }
         }
 
+        /* UpdateToken - updates the appropriate class field(s)
+         * 
+         * The name of a child doesn't change during play, but the age of the child does,
+         * so this method updates the ChildIsToddler value from game data.
+         */
         public void UpdateToken()
         {
             if (Context.IsWorldReady)
@@ -63,6 +86,11 @@ namespace FamilyPlanning
             }
         }
 
+        /* ClearToken - unintializes the class fields
+         * 
+         * Clears the cached data in the token and sets Initialized to false
+         * in preparation for loading a different save file.
+         */ 
         public void ClearToken()
         {
             ChildName = null;
@@ -70,11 +98,16 @@ namespace FamilyPlanning
             Initialized = false;
         }
 
+        /* Returns the Initialize value */
         public bool IsInitialized()
         {
             return Initialized;
         }
 
+        /* GetChildName - the Content Patcher API registered function for the token ChildName
+         * 
+         * Returns the ChildName string in a form that the Content Patcher API can use.
+         */ 
         public IEnumerable<string> GetChildName()
         {
             if (ChildName != null)
@@ -82,6 +115,10 @@ namespace FamilyPlanning
             return null;
         }
 
+        /* GetChildIsToddler - the Content Patcher API registered function for the token ChildIsToddler
+         * 
+         * Returns the ChildIsToddler string in a form that the Content Patcher API can use.
+         */
         public IEnumerable<string> GetChildIsToddler()
         {
             if(ChildIsToddler != null)

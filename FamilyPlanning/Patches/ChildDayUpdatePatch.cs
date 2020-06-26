@@ -9,7 +9,8 @@ namespace FamilyPlanning.Patches
     /* Child.dayUpdate():
      * This patch overrides the call to the getChildBed method, to handle having more than 2 children.
      * 
-     * For the first two children, this method behaves exactly the same as vanilla.
+     * For the first two children, this method behaves the same as vanilla,
+     * with the exception that beds are chosen by birth order instead of by gender.
      * After two children, child 3 will try to share a bed with a like-gender sibling,
      * and child 4 will use whatever the last open spot is.
      * If there are more than 4 children, child 5+ will end up in the same spot as child 4.

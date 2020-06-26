@@ -16,43 +16,77 @@ using Harmony;
 
 namespace FamilyPlanning
 {
-    /* Family Planning: allows players to customize the number of children they have and their genders,
-     *                  modify the chance of a spouse asking for a child, with or without console messages,
-     *                  and allows them to adopt children with a roommate. (In Vanilla, it's Krobus.)
-     *                  
-     * -> The player enters the number of children they want through a console command.
-     *   -> If 0, they never get the question.
-     *   -> If 1, they stop after 1.
-     *   -> The default is 2, vanilla behavior.
-     *   -> If more than 2, then they get the event even after 2 children, until they hit the limit.
-     *   
-     * -> The player is given the option to customize the gender of the child at birth.
+    /* Family Planning: 
+     * This mod allows players to customize the number of children they have and their genders,
+     * modify the chance of a spouse asking for a child, with or without console messages,
+     * and allows them to adopt children with a roommate. (In Vanilla, the only roommate is Krobus.)
      * 
-     * -> The player can change the chance of their spouse asking for a child through a console command.
-     * -> They enter a whole number from 1 to 100, representing the percentage chance of the question happening.
-     * -> The value defaults to 5%, the same as vanilla.
-     * 
+     * *** Global config options ***
      * -> Config Option: AdoptChildrenWithRoommate (default is false)
-     * -> If you set this value to true, then your roommate will prompt you to adopt a child.
-     * -> (You could potentially stop this by setting MaxChildren to 0,
-     *     but I'm not sure why you'd want to after setting the config option.)    
-     * -> (If you're using a mod that turns Krobus into a normal marriage candidate, like Krobus Marriage Mod,
-     *     then you don't need this setting, things will work out normally.)
-     *     
+     *    If you set this value to true, then your roommate will prompt you to adopt a child.
+     * -> Note: If you're using a mod that turns Krobus (or any other roommate) into a normal marriage candidate, like Krobus Marriage Mod,
+     *    then you don't need this setting to be true, Krobus will be treated like a normal spouse automatically.
+     * -> Note: Because this is a global config option, if you set it to true, then all save files will be affected.
+     *    If you'd like to have some save files where Krobus will adopt children, and some where he will not,
+     *    I would recommand using "set_max_children 0" on the save files where you don't want to adopt children.
+     *    This will stop Krobus from asking to adopt a child, even if you have the config set to true.
+     * 
      * -> Config Option: BabyQuestionMessages (default is false)
-     * -> When true, you will get messages in the SMAPI console 
-     *    about whether your spouse is able to ask you for a child, and their chance of doing so.
+     *    If you set this value to true, then you will get messages in the SMAPI console each night
+     *    about whether your spouse is able to ask you for a child.
+     *    This can help if you're unsure whether your spouse hasn't asked because you don't meet a requirement,
+     *    or if you're just getting unlucky repeatedly.
+     * 
+     * *** Save file config options ***
+     * Customizing the number of children:
+     * -> The player enters the number of children they want through a console command,
+     *    or by editing the "MaxChildren" field in the file "FamilyPlanning/data/<save file name>.json".
+     * -> This value can be customized per save file, so different save files can have different settings.
+     * -> Using the console command:
+     *    "set_max_children 0" -> they never get the question.
+     *    "set_max_children 1" -> they only get the question until they have the first child, then don't get it again.
+     *    "set_max_children 2" -> vanilla behavior.
+     *    "set_max_children 3" or
+     *    "set_max_children 4" -> they get the question event after having 2 children, until the limit (3 or 4).
+     *    "set_max_children 5" or higher than 5 -> they will continue to get the question until they hit the limit,
+     *      but mod features like where children sleep/custom sprites will not work properly.
+     * 
+     * Customizing the gender of children:
+     * -> The player is given the option to customize the gender of the child at birth when you name them.
+     *    Just click the male icon to have a male child, and the female icon to have a female child.
+     * 
+     * Changing the chance of your spouse asking for a child:
+     * -> Every night, if it is possible for your spouse to do so, there is a chance they will ask if you want to have a child.
+     *    Normally in Stardew Valley, the chance is 5%.
+     * -> The player can change the chance of their spouse asking for a child through a console command,
+     *    or by editing the "BabyQuestionChance" field in the file "FamilyPlanning/data/<save file name>.json".
+     * -> This value can be customized per save file, so different save files can have different settings.
+     * -> Using the console command:
+     *    Enter a whole number from 1 to 100, representing the percentage chance of your spouse asking the question.
+     *    "set_question_chance 0"   -> there is a 0% your spouse will ask, you will never get the question.
+     *    "set_question_chance 5"   -> there is a 5% chance your spouse will ask, same chance as normal.
+     *    "set_question_chance 25"  -> there is a 25% chance your spouse will ask, much more likely than normal.
+     *    "set_question_chance 100" -> there is a 100% chance your spouse will ask, your spouse will always ask.
+     * -> Note: this only changes the chance that your spouse will ask to have a child if it's possible for them to ask.
+     *    (For more information on the requirements, check out https://stardewvalleywiki.com/Children)
+     *    The requirements include:
+     *    Having the house upgrade that gives you a nursery/upstairs (house upgrade 2),
+     *    being married to your spouse for at least 7 days, having at least 10 hearts with your spouse,
+     *    NOT currently waiting for a previous child to be born,
+     *    NOT currently having a previous child in the crib (younger than toddler),
+     *    NOT currently having the maximum number of children allowed. (See "Customizing the number of children" above.)
      */
 
     /* Harmony patches:
-     *  -> StardewValley.Characters.Child.reloadSprite() -> allows custom sprites for children
-     *  -> StardewValley.Characters.Child.tenMinuteUpdate() -> tells the child where their bed is
-     *  -> StardewValley.NPC.isGaySpouse() -> makes sure that roommates are given adoption dialogue
-     *  -> StardewValley.Utility.pickPersonalFarmEvent() -> control baby question events & writes console messages by config
+     * -> StardewValley.Utility.pickPersonalFarmEvent() -> control baby question events & writes console messages by config
+     * -> StardewValley.NPC.isGaySpouse() -> ensures that roommates are given adoption dialogue
+     * -> StardewValley.Characters.Child.reloadSprite() -> allows custom sprites for children
+     * -> StardewValley.Characters.Child.dayUpdate() -> changes the bed position for toddlers
+     * -> StardewValley.Characters.Child.tenMinuteUpdate() -> changes the bed position for toddlers 
      */
 
     /* Content Packs:
-     * Instructions for how to make a Content Pack are in the README.md on GitHub 
+     * Instructions for how to make a Content Pack are in the README.md on GitHub.
      */
 
     class ModEntry : Mod
@@ -205,7 +239,8 @@ namespace FamilyPlanning
 
             try
             {
-                foreach (Child child in Game1.player.getChildren())
+                List<Child> children = Game1.player.getChildren();
+                foreach (Child child in children)
                     child.reloadSprite();
                 firstTick = false;
             }
@@ -219,6 +254,7 @@ namespace FamilyPlanning
          */
         private void OnSaveLoaded(object sender, SaveLoadedEventArgs e)
         {
+            // Load the data/<save name>.json file
             try
             {
                 data = Helper.Data.ReadJsonFile<FamilyData>("data/" + Constants.SaveFolderName + ".json");
@@ -227,6 +263,7 @@ namespace FamilyPlanning
 
             if (data == null)
             {
+                // Create a new data/<save name>.json file
                 try
                 {
                     data = new FamilyData();
@@ -235,7 +272,7 @@ namespace FamilyPlanning
                 catch (Exception ex)
                 {
                     Monitor.Log("Family Planning failed to create a new config file at data/" + Constants.SaveFolderName + ".json", LogLevel.Error);
-                    Monitor.Log("Exception: " + ex.Message, LogLevel.Debug);
+                    Monitor.Log("Exception: " + ex.Message, LogLevel.Trace);
                 }
             }
         }

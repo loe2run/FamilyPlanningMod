@@ -6,7 +6,29 @@ namespace FamilyPlanning
      * I'm expanding from a ChildSpriteData Content Pack to a generic ContentPackData.
      * This will support child sprites and will also support dialogue for your spouse.
      * Details on these are below.
-     */ 
+     */
+
+    /* The default .json file is organized as follows:
+     * {
+     *     "ChildSpriteID": {
+     *         "<Child Name>": {
+     *             "BabySpriteName": "<File location for the baby sprite>",
+     *             "ToddlerSpriteName": "<File location for the toddler sprite>"
+     *         },
+     *         // You could insert more sprites for a different child here
+     *     },
+     *     "SpouseDialogue": {
+     *         "<Name of spouse>": [
+     *             {
+     *                 "BabyNumber": <Number>,
+     *                 "Dialogue": "<Dialogue text.>"
+     *             },
+     *             // You could insert more dialogue for this spouse here
+     *         ],
+     *         // You could insert dialogue for a different spouse here
+     *     }
+     * }
+     */
 
     class ContentPackData
     {
@@ -68,27 +90,5 @@ namespace FamilyPlanning
             ChildSpriteID = new Dictionary<string, SpriteNames>();
             SpouseDialogue = new Dictionary<string, List<BirthDialogue>>();
         }
-
-        /* The default .json file is organized as follows:
-         * {
-         *     "ChildSpriteID": {
-         *         "<Child Name>": {
-         *             "BabySpriteName": "<File location for the baby sprite>",
-         *             "ToddlerSpriteName": "<File location for the toddler sprite>"
-         *         },
-         *         // You could insert more sprites for a different child here
-         *     },
-         *     "SpouseDialogue": {
-         *         "<Name of spouse>": [
-         *             {
-         *                 "BabyNumber": <Number>,
-         *                 "Dialogue": "<Dialogue text.>"
-         *             },
-         *             // You could insert more dialogue for this spouse here
-         *         ],
-         *         // You could insert dialogue for a different spouse here
-         *     }
-         * }
-         */
     }
 }
