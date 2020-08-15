@@ -1,17 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
-using StardewModdingAPI;
+using FamilyPlanning.Integrations.ContentPatcher;
 using Harmony;
+using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
-using StardewValley.Events;
 using StardewValley.Characters;
+using StardewValley.Events;
 
 /* TODO:
  * -> Check if multiplayer works
  * -> Implement multiplayer birthing event/naming menu stuff
  */
- 
+
 namespace FamilyPlanning
 {
     /* Family Planning: allows players to customize the number of children they have and their genders,
@@ -97,7 +98,7 @@ namespace FamilyPlanning
             helper.Events.GameLoop.OneSecondUpdateTicked += OnOneSecondUpdateTicked;
             //Harmony
             HarmonyInstance harmony = HarmonyInstance.Create("Loe2run.FamilyPlanning");
-            
+
             harmony.Patch(
                original: AccessTools.Method(typeof(NPC), nameof(NPC.canGetPregnant)),
                postfix: new HarmonyMethod(typeof(Patches.CanGetPregnantPatch), nameof(Patches.CanGetPregnantPatch.Postfix))
@@ -137,7 +138,7 @@ namespace FamilyPlanning
             {
                 data = Helper.Data.ReadJsonFile<FamilyData>("data/" + Constants.SaveFolderName + ".json");
 
-                if(data == null)
+                if (data == null)
                 {
                     data = new FamilyData();
                     Helper.Data.WriteJsonFile("data/" + Constants.SaveFolderName + ".json", data);
@@ -177,89 +178,7 @@ namespace FamilyPlanning
 
         private void OnGameLaunched(object sender, GameLaunchedEventArgs e)
         {
-            IContentPatcherAPI api = Helper.ModRegistry.GetApi<IContentPatcherAPI>("Pathoschild.ContentPatcher");
-            if (api == null)
-                return;
-
-            ChildToken token = new ChildToken(1);
-            api.RegisterToken(
-                mod: ModManifest,
-                name: "FirstChildName",
-                updateContext: token.NameUpdateContext,
-                isReady: token.IsReady,
-                getValue: token.NameGetValue,
-                allowsInput: false,
-                requiresInput: false
-            );
-            api.RegisterToken(
-                mod: ModManifest,
-                name: "FirstChildIsToddler",
-                updateContext: token.AgeUpdateContext,
-                isReady: token.IsReady,
-                getValue: token.AgeGetValue,
-                allowsInput: false,
-                requiresInput: false
-            );
-
-            token = new ChildToken(2);
-            api.RegisterToken(
-                mod: ModManifest,
-                name: "SecondChildName",
-                updateContext: token.NameUpdateContext,
-                isReady: token.IsReady,
-                getValue: token.NameGetValue,
-                allowsInput: false,
-                requiresInput: false
-            );
-            api.RegisterToken(
-                mod: ModManifest,
-                name: "SecondChildIsToddler",
-                updateContext: token.AgeUpdateContext,
-                isReady: token.IsReady,
-                getValue: token.AgeGetValue,
-                allowsInput: false,
-                requiresInput: false
-            );
-
-            token = new ChildToken(3);
-            api.RegisterToken(
-                mod: ModManifest,
-                name: "ThirdChildName",
-                updateContext: token.NameUpdateContext,
-                isReady: token.IsReady,
-                getValue: token.NameGetValue,
-                allowsInput: false,
-                requiresInput: false
-            );
-            api.RegisterToken(
-                mod: ModManifest,
-                name: "ThirdChildIsToddler",
-                updateContext: token.AgeUpdateContext,
-                isReady: token.IsReady,
-                getValue: token.AgeGetValue,
-                allowsInput: false,
-                requiresInput: false
-            );
-
-            token = new ChildToken(4);
-            api.RegisterToken(
-                mod: ModManifest,
-                name: "FourthChildName",
-                updateContext: token.NameUpdateContext,
-                isReady: token.IsReady,
-                getValue: token.NameGetValue,
-                allowsInput: false,
-                requiresInput: false
-            );
-            api.RegisterToken(
-                mod: ModManifest,
-                name: "FourthChildIsToddler",
-                updateContext: token.AgeUpdateContext,
-                isReady: token.IsReady,
-                getValue: token.AgeGetValue,
-                allowsInput: false,
-                requiresInput: false
-            );
+            new ContentPatcherIntegration(this.ModManifest, this.Helper.ModRegistry).RegisterTokens();
         }
 
         public void GetTotalChildrenConsole(string command, string[] args)
@@ -313,14 +232,14 @@ namespace FamilyPlanning
             {
                 input = int.Parse(args[0]);
 
-                if(input >= 1 && input <= 100)
+                if (input >= 1 && input <= 100)
                 {
                     data.BabyQuestionChance = input;
                     Helper.Data.WriteJsonFile("data/" + Constants.SaveFolderName + ".json", data);
                     Monitor.Log("The percentage chance that your spouse will ask about having a baby (when possible) is now " + input + "%.", LogLevel.Info);
                     Monitor.Log("BabyQuestionDouble is now " + (input / 100.0), LogLevel.Trace);
                 }
-                else if(input == 0)
+                else if (input == 0)
                 {
                     Monitor.Log("You can't set the percentage chance to 0. If you don't want your spouse to ask about having children at all, you should use the set_max_children command.", LogLevel.Info);
                 }
@@ -329,7 +248,7 @@ namespace FamilyPlanning
                     Monitor.Log("That value is out of bounds. The value can be between 1 to 100, representing the percentage chance. (I.e. 100 -> 100%, 50 -> 50%, 5 -> 5%).", LogLevel.Info);
                 }
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Monitor.Log(e.Message, LogLevel.Trace);
             }

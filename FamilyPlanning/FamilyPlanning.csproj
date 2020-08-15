@@ -51,7 +51,10 @@
     <Compile Include="CustomBirthingEvent.cs" />
     <Compile Include="CustomNamingMenu.cs" />
     <Compile Include="FamilyData.cs" />
-    <Compile Include="IContentPatcherAPI.cs" />
+    <Compile Include="Integrations\ContentPatcher\ChildData.cs" />
+    <Compile Include="Integrations\ContentPatcher\ChildToken.cs" />
+    <Compile Include="Integrations\ContentPatcher\ContentPatcherIntegration.cs" />
+    <Compile Include="Integrations\ContentPatcher\IContentPatcherAPI.cs" />
     <Compile Include="ModConfig.cs" />
     <Compile Include="ModEntry.cs" />
     <Compile Include="Patches\CanGetPregnantPatch.cs" />
